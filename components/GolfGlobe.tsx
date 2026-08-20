@@ -7,6 +7,9 @@ const Globe = dynamic(() => import("react-globe.gl"), {
   ssr: false,
 });
 
+/*
+ * Matches the Supabase courses table.
+ */
 type Course = {
   id: string;
   name: string;
@@ -16,8 +19,8 @@ type Course = {
   region?: string | null;
   city?: string | null;
 
-  latitude?: number | string | null;
-  longitude?: number | string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 
   website?: string | null;
   holes?: number | null;
@@ -35,106 +38,6 @@ type GolfGlobeProps = {
   courses?: Course[] | any[];
 };
 
-/*
- * Make sure coordinates are actual numbers.
- */
-function normalizeCourse(course: any): Course | null {
-  if (!course) return null;
-
-  const latitude = Number(course.latitude);
-  const longitude = Number(course.longitude);
-
-  if (
-    !course.id ||
-    !course.name ||
-    !Number.isFinite(latitude) ||
-    !Number.isFinite(longitude)
-  ) {
-    return null;
-  }
-
-  if (latitude < -90 || latitude > 90) return null;
-  if (longitude < -180 || longitude > 180) return null;
-
-  return {
-    ...course,
-    latitude,
-    longitude,
-  };
-}
-
-/*
- * Create a visible golf flag using HTML.
- *
- * We are also going to use point markers underneath
- * the flags as a guaranteed visual marker.
- */
-function makeFlag(course: Course, onClick: () => void) {
-  const el = document.createElement("div");
-
-  const flagColor = course.played
-    ? "#8fd19e"
-    : "#e6c875";
-
-  el.style.width = "46px";
-  el.style.height = "58px";
-  el.style.position = "relative";
-  el.style.cursor = "pointer";
-  el.style.pointerEvents = "auto";
-  el.style.transform = "translate(-50%, -100%)";
-  el.style.zIndex = "9999";
-
-  el.innerHTML = `
-    <div
-      style="
-        position:absolute;
-        left:22px;
-        top:0;
-        width:3px;
-        height:39px;
-        background:#ffffff;
-        border-radius:3px;
-        box-shadow:0 0 5px rgba(255,255,255,.6);
-      "
-    ></div>
-
-    <div
-      style="
-        position:absolute;
-        left:24px;
-        top:1px;
-        width:22px;
-        height:15px;
-        background:${flagColor};
-        clip-path:polygon(0 0,100% 25%,0 100%);
-        filter:drop-shadow(0 0 7px ${flagColor});
-      "
-    ></div>
-
-    <div
-      style="
-        position:absolute;
-        left:10px;
-        top:39px;
-        width:26px;
-        height:11px;
-        border-radius:50%;
-        background:${flagColor};
-        box-shadow:
-          0 0 8px ${flagColor},
-          0 0 18px ${flagColor};
-      "
-    ></div>
-  `;
-
-  el.addEventListener("click", (event) => {
-    event.stopPropagation();
-    onClick();
-  });
-
-  return el;
-}
-
 export default function GolfGlobe({
   courses: initialCourses = [],
 }: GolfGlobeProps) {
@@ -142,36 +45,39 @@ export default function GolfGlobe({
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [countries, setCountries] = useState<any[]>([]);
-
   const [selectedCourse, setSelectedCourse] =
     useState<Course | null>(null);
-
   const [selectedCountry, setSelectedCountry] =
     useState("");
 
   /*
-   * Load golf courses.
+   * LOAD COURSES
+   *
+   * First use courses passed from the page.
+   * If none are supplied, load directly from Supabase.
    */
   useEffect(() => {
-    const passedCourses = Array.isArray(initialCourses)
-      ? initialCourses
-      : [];
+    const passedCourses = (initialCourses || []) as Course[];
 
-    const normalizedPassedCourses = passedCourses
-      .map(normalizeCourse)
-      .filter(Boolean) as Course[];
+    const validPassedCourses = passedCourses.filter(
+      (course) =>
+        course &&
+        course.id &&
+        course.name &&
+        course.latitude !== null &&
+        course.latitude !== undefined &&
+        course.longitude !== null &&
+        course.longitude !== undefined &&
+        Number.isFinite(Number(course.latitude)) &&
+        Number.isFinite(Number(course.longitude))
+    );
 
-    if (normalizedPassedCourses.length > 0) {
-      setCourses(normalizedPassedCourses);
+    if (validPassedCourses.length > 0) {
+      setCourses(validPassedCourses);
 
       console.log(
-        "GOLF GLOBE COURSES:",
-        normalizedPassedCourses.length
-      );
-
-      console.log(
-        "FIRST COURSE:",
-        normalizedPassedCourses[0]
+        "Golf courses loaded from page:",
+        validPassedCourses.length
       );
 
       return;
@@ -214,15 +120,24 @@ export default function GolfGlobe({
 
         const data = await response.json();
 
-        const normalizedCourses = (data || [])
-          .map(normalizeCourse)
-          .filter(Boolean) as Course[];
+        const validCourses = (data || []).filter(
+          (course: Course) =>
+            course &&
+            course.id &&
+            course.name &&
+            course.latitude !== null &&
+            course.latitude !== undefined &&
+            course.longitude !== null &&
+            course.longitude !== undefined &&
+            Number.isFinite(Number(course.latitude)) &&
+            Number.isFinite(Number(course.longitude))
+        );
 
-        setCourses(normalizedCourses);
+        setCourses(validCourses);
 
         console.log(
-          "GOLF GLOBE COURSES FROM SUPABASE:",
-          normalizedCourses.length
+          "Golf courses loaded from Supabase:",
+          validCourses.length
         );
       } catch (error) {
         console.error(
@@ -236,7 +151,7 @@ export default function GolfGlobe({
   }, [initialCourses]);
 
   /*
-   * Load country borders.
+   * LOAD COUNTRY BORDERS
    */
   useEffect(() => {
     fetch(
@@ -246,16 +161,16 @@ export default function GolfGlobe({
       .then((data) => {
         setCountries(data.features || []);
       })
-      .catch((error) => {
+      .catch((err) => {
         console.error(
           "Country map error:",
-          error
+          err
         );
       });
   }, []);
 
   /*
-   * Initial globe position.
+   * INITIAL GLOBE POSITION
    */
   useEffect(() => {
     if (!globeRef.current) return;
@@ -277,43 +192,27 @@ export default function GolfGlobe({
     );
   }, []);
 
-  /*
-   * Log whenever courses reach the globe.
-   */
-  useEffect(() => {
-    console.log(
-      "COURSES CURRENTLY ON GLOBE:",
-      courses.length
-    );
-
-    if (courses.length > 0) {
-      console.log(
-        "COURSE COORDINATES:",
-        courses.map((course) => ({
-          name: course.name,
-          lat: Number(course.latitude),
-          lng: Number(course.longitude),
-        }))
-      );
-    }
-  }, [courses]);
-
   return (
     <div
       style={{
         position: "relative",
         width: "100%",
         display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
+        justifyContent: "center",
+        overflow: "visible",
       }}
     >
       <Globe
         ref={globeRef}
+
         width={390}
         height={390}
+
         backgroundColor="rgba(0,0,0,0)"
 
+        /*
+         * EARTH
+         */
         globeImageUrl="https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-dark.jpg"
 
         bumpImageUrl="https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-topology.png"
@@ -323,6 +222,7 @@ export default function GolfGlobe({
         atmosphereAltitude={0.12}
 
         showGraticules={false}
+
         animateIn={true}
         waitForGlobeReady={true}
 
@@ -356,10 +256,7 @@ export default function GolfGlobe({
             font-size:12px;
           ">
             <strong>
-              ${
-                polygon?.properties?.ADMIN ||
-                "Country"
-              }
+              ${polygon?.properties?.ADMIN || "Country"}
             </strong>
           </div>
         `}
@@ -375,174 +272,119 @@ export default function GolfGlobe({
         polygonsTransitionDuration={250}
 
         /*
-         * GUARANTEED COURSE MARKERS
+         * ==========================================
+         * GOLF COURSE FLAGS
+         * ==========================================
          *
-         * These are simple glowing dots.
-         * They let us verify the coordinates are
-         * actually reaching the globe.
+         * Native globe labels are used here instead
+         * of HTML elements.
+         *
+         * Green = Played
+         * Yellow = Wishlist
          */
-        pointsData={courses}
 
-        pointLat={(course: Course) =>
+        labelsData={courses}
+
+        labelLat={(course: Course) =>
           Number(course.latitude)
         }
 
-        pointLng={(course: Course) =>
+        labelLng={(course: Course) =>
           Number(course.longitude)
         }
 
-        pointAltitude={0.065}
+        labelAltitude={0.065}
 
-        pointRadius={0.35}
+        labelText={() => "⚑"}
 
-        pointColor={(course: Course) =>
+        labelSize={() => 2.2}
+
+        labelColor={(course: Course) =>
           course.played
             ? "#8fd19e"
             : "#e6c875"
         }
 
-        pointsMerge={false}
+        labelDotRadius={() => 0.45}
 
-        onPointClick={(course: Course) => {
+        labelDotOrientation={() => "bottom"}
+
+        labelResolution={3}
+
+        labelsTransitionDuration={0}
+
+        onLabelClick={(course: Course) => {
           setSelectedCountry("");
           setSelectedCourse(course);
         }}
-
-        /*
-         * FLAG MARKERS
-         */
-        htmlElementsData={courses}
-
-        htmlLat={(course: Course) =>
-          Number(course.latitude)
-        }
-
-        htmlLng={(course: Course) =>
-          Number(course.longitude)
-        }
-
-        htmlAltitude={0.075}
-
-        htmlElement={(course: Course) =>
-          makeFlag(course, () => {
-            setSelectedCountry("");
-            setSelectedCourse(course);
-          })
-        }
-
-        htmlTransitionDuration={0}
       />
-
-      {/*
-       * SIMPLE LEGEND
-       */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: "20px",
-          marginTop: "-2px",
-          color: "#8c968f",
-          fontSize: "13px",
-        }}
-      >
-        <span>
-          <span
-            style={{
-              color: "#8fd19e",
-              fontSize: "18px",
-              marginRight: "5px",
-            }}
-          >
-            ●
-          </span>
-          Played
-        </span>
-
-        <span>
-          <span
-            style={{
-              color: "#e6c875",
-              fontSize: "18px",
-              marginRight: "5px",
-            }}
-          >
-            ●
-          </span>
-          Wishlist
-        </span>
-      </div>
-
-      {/*
-       * DRAG INSTRUCTION
-       */}
-      <div
-        style={{
-          marginTop: "5px",
-          color: "#8c968f",
-          fontSize: "13px",
-          whiteSpace: "nowrap",
-          pointerEvents: "none",
-        }}
-      >
-        ↔ Drag to explore
-      </div>
 
       {/*
        * COUNTRY POPUP
        */}
-      {selectedCountry && !selectedCourse && (
-        <button
-          onClick={() =>
-            setSelectedCountry("")
-          }
-          style={{
-            position: "absolute",
-            left: "50%",
-            bottom: "20px",
-            transform: "translateX(-50%)",
-            width: "250px",
-            padding: "14px 18px",
-            borderRadius: "16px",
-            background: "rgba(7,13,9,.94)",
-            border:
-              "1px solid rgba(150,190,158,.35)",
-            color: "white",
-            zIndex: 20,
-          }}
-        >
-          <div
+      {selectedCountry &&
+        !selectedCourse && (
+          <button
+            onClick={() =>
+              setSelectedCountry("")
+            }
             style={{
-              fontSize: "10px",
-              letterSpacing: "3px",
-              color: "#8fd19e",
-            }}
-          >
-            COUNTRY
-          </div>
+              position: "absolute",
+              left: "50%",
+              bottom: "20px",
+              transform:
+                "translateX(-50%)",
 
-          <div
-            style={{
-              fontSize: "18px",
-              fontWeight: 700,
-              marginTop: "4px",
-            }}
-          >
-            {selectedCountry}
-          </div>
+              width: "250px",
 
-          <div
-            style={{
-              fontSize: "11px",
-              color: "#9ca69f",
-              marginTop: "5px",
+              padding: "14px 18px",
+
+              borderRadius: "16px",
+
+              background:
+                "rgba(7,13,9,.94)",
+
+              border:
+                "1px solid rgba(150,190,158,.35)",
+
+              color: "white",
+
+              zIndex: 20,
+
+              cursor: "pointer",
             }}
           >
-            Tap to dismiss
-          </div>
-        </button>
-      )}
+            <div
+              style={{
+                fontSize: "10px",
+                letterSpacing: "3px",
+                color: "#8fd19e",
+              }}
+            >
+              COUNTRY
+            </div>
+
+            <div
+              style={{
+                fontSize: "18px",
+                fontWeight: 700,
+                marginTop: "4px",
+              }}
+            >
+              {selectedCountry}
+            </div>
+
+            <div
+              style={{
+                fontSize: "11px",
+                color: "#9ca69f",
+                marginTop: "5px",
+              }}
+            >
+              Tap to dismiss
+            </div>
+          </button>
+        )}
 
       {/*
        * COURSE POPUP
@@ -553,14 +395,24 @@ export default function GolfGlobe({
             position: "absolute",
             left: "50%",
             bottom: "20px",
-            transform: "translateX(-50%)",
+
+            transform:
+              "translateX(-50%)",
+
             width: "250px",
+
             padding: "16px",
+
             borderRadius: "16px",
-            background: "rgba(7,13,9,.94)",
+
+            background:
+              "rgba(7,13,9,.94)",
+
             border:
               "1px solid rgba(150,190,158,.35)",
+
             color: "white",
+
             zIndex: 20,
           }}
         >
@@ -571,7 +423,9 @@ export default function GolfGlobe({
               color: "#8fd19e",
             }}
           >
-            GOLF COURSE
+            {selectedCourse.played
+              ? "PLAYED COURSE"
+              : "WISHLIST COURSE"}
           </div>
 
           <div
@@ -647,24 +501,39 @@ export default function GolfGlobe({
 
           {selectedCourse.website && (
             <a
-              href={selectedCourse.website}
+              href={
+                selectedCourse.website
+              }
               target="_blank"
               rel="noopener noreferrer"
               style={{
                 display: "block",
+
                 width: "100%",
-                boxSizing: "border-box",
+
+                boxSizing:
+                  "border-box",
+
                 padding: "10px",
+
                 borderRadius: "10px",
+
                 background:
                   "rgba(143,209,158,.12)",
+
                 border:
                   "1px solid rgba(143,209,158,.25)",
+
                 color: "#8fd19e",
+
                 textAlign: "center",
+
                 textDecoration: "none",
+
                 fontSize: "12px",
+
                 fontWeight: 700,
+
                 marginBottom: "8px",
               }}
             >
@@ -678,18 +547,58 @@ export default function GolfGlobe({
             }
             style={{
               width: "100%",
+
               padding: "10px",
+
               borderRadius: "10px",
+
               border: "none",
+
               background: "#dfe9df",
+
               color: "#101711",
+
               fontWeight: 700,
+
+              cursor: "pointer",
             }}
           >
             Close
           </button>
         </div>
       )}
+
+      {/*
+       * DRAG INSTRUCTION
+       *
+       * Only one copy.
+       * The Played/Wishlist legend should remain
+       * on the main page, not inside this component.
+       */}
+      <div
+        style={{
+          position: "absolute",
+
+          bottom: "-28px",
+
+          left: "50%",
+
+          transform:
+            "translateX(-50%)",
+
+          color: "#8c968f",
+
+          fontSize: "13px",
+
+          whiteSpace: "nowrap",
+
+          pointerEvents: "none",
+
+          zIndex: 5,
+        }}
+      >
+        ↔ Drag to explore
+      </div>
     </div>
   );
 }
