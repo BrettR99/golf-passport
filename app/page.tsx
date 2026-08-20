@@ -1,51 +1,49 @@
 "use client";
 
 import { useState } from "react";
+import GolfGlobe from "@/components/GolfGlobe";
 
 const courses = [
   {
     name: "Sandpiper Resort",
     location: "Harrison Mills, BC",
+    lat: 49.3,
+    lng: -121.8,
     score: 89,
     rating: 9.2,
-    x: "17%",
-    y: "43%",
     played: true,
   },
   {
     name: "Whistler Golf Club",
     location: "Whistler, BC",
+    lat: 50.12,
+    lng: -122.96,
     score: 94,
     rating: 9.0,
-    x: "20%",
-    y: "38%",
     played: true,
   },
   {
     name: "Pebble Beach",
     location: "California, USA",
-    score: null,
+    lat: 36.57,
+    lng: -121.95,
     rating: 9.8,
-    x: "18%",
-    y: "52%",
     played: false,
   },
   {
     name: "St Andrews",
     location: "Scotland, UK",
-    score: null,
+    lat: 56.34,
+    lng: -2.8,
     rating: 9.9,
-    x: "52%",
-    y: "31%",
     played: false,
   },
   {
     name: "Royal Melbourne",
     location: "Melbourne, Australia",
-    score: null,
+    lat: -37.83,
+    lng: 145.03,
     rating: 9.7,
-    x: "84%",
-    y: "73%",
     played: false,
   },
 ];
@@ -62,9 +60,7 @@ export default function Home() {
           <div className="page-title">Your Golf World</div>
         </div>
 
-        <button className="profile-button" aria-label="Profile">
-          B
-        </button>
+        <button className="profile-button">B</button>
       </div>
 
       <div className="stats-row">
@@ -85,35 +81,10 @@ export default function Home() {
       </div>
 
       <section className="globe-section">
-        <div className="globe">
-          <div className="globe-grid horizontal one" />
-          <div className="globe-grid horizontal two" />
-          <div className="globe-grid horizontal three" />
-          <div className="globe-grid vertical one" />
-          <div className="globe-grid vertical two" />
-
-          <div className="continent north-america" />
-          <div className="continent south-america" />
-          <div className="continent europe" />
-          <div className="continent asia" />
-          <div className="continent australia" />
-
-          {courses.map((course) => (
-            <button
-              key={course.name}
-              className={`course-pin ${
-                selectedCourse.name === course.name ? "selected" : ""
-              } ${course.played ? "played" : "wishlist"}`}
-              style={{ left: course.x, top: course.y }}
-              onClick={() => setSelectedCourse(course)}
-              aria-label={course.name}
-            >
-              <span />
-            </button>
-          ))}
-
-          <div className="globe-shine" />
-        </div>
+        <GolfGlobe
+          courses={courses}
+          onCourseSelect={setSelectedCourse}
+        />
 
         <div className="map-label">
           <span className="legend-dot played-dot" />
@@ -148,6 +119,7 @@ export default function Home() {
         ) : (
           <div className="wishlist-message">
             <span>⭐</span>
+
             <div>
               <strong>On your bucket list</strong>
               <small>One day you'll play it.</small>
@@ -167,22 +139,25 @@ export default function Home() {
       </button>
 
       <nav className="bottom-nav">
-        {["World", "Explore", "Wishlist", "Feed", "Profile"].map((tab) => (
-          <button
-            key={tab}
-            className={activeTab === tab ? "active" : ""}
-            onClick={() => setActiveTab(tab)}
-          >
-            <span className="nav-icon">
-              {tab === "World" && "◉"}
-              {tab === "Explore" && "⌕"}
-              {tab === "Wishlist" && "☆"}
-              {tab === "Feed" && "◌"}
-              {tab === "Profile" && "○"}
-            </span>
-            <span>{tab}</span>
-          </button>
-        ))}
+        {["World", "Explore", "Wishlist", "Feed", "Profile"].map(
+          (tab) => (
+            <button
+              key={tab}
+              className={activeTab === tab ? "active" : ""}
+              onClick={() => setActiveTab(tab)}
+            >
+              <span className="nav-icon">
+                {tab === "World" && "◉"}
+                {tab === "Explore" && "⌕"}
+                {tab === "Wishlist" && "☆"}
+                {tab === "Feed" && "◌"}
+                {tab === "Profile" && "○"}
+              </span>
+
+              <span>{tab}</span>
+            </button>
+          )
+        )}
       </nav>
     </main>
   );
