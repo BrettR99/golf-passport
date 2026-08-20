@@ -11,6 +11,7 @@
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
+    "react-globe.gl": "2.38.0",
     "lucide-react": "latest"
   },
   "devDependencies": {
