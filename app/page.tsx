@@ -94,7 +94,6 @@ export default function Home() {
 
       <section className="globe-section">
         <GolfGlobe
-          courses={courses}
           onCourseSelect={(course) => setSelectedCourse(course)}
         />
 
