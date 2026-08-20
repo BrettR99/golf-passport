@@ -93,9 +93,7 @@ export default function Home() {
       </div>
 
       <section className="globe-section">
-        <GolfGlobe
-          onCourseSelect={(course) => setSelectedCourse(course)}
-        />
+       <GolfGlobe />
 
         <div className="map-label">
           <span className="legend-dot played-dot" />
