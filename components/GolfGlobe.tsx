@@ -8,26 +8,8 @@ const Globe = dynamic(() => import("react-globe.gl"), {
 });
 
 /*
- * Matches the Supabase courses table.
- *
- * Existing columns:
- * id
- * name
- * country
- * country_code
- * region
- * city
- * latitude
- * longitude
- * website
- * holes
- * par
- * rating
- * description
- * created_at
- * updated_at
+ * Supabase courses table
  */
-
 type Course = {
   id: string;
   name: string;
@@ -37,8 +19,8 @@ type Course = {
   region?: string | null;
   city?: string | null;
 
-  latitude?: number | null;
-  longitude?: number | null;
+  latitude?: number | string | null;
+  longitude?: number | string | null;
 
   website?: string | null;
   holes?: number | null;
@@ -52,63 +34,98 @@ type Course = {
   played?: boolean;
 };
 
-/*
- * The page can pass its own course objects into this component.
- * We intentionally keep this prop flexible so different Course
- * definitions elsewhere in the app don't cause TypeScript conflicts.
- */
 type GolfGlobeProps = {
   courses?: Course[] | any[];
 };
 
+/*
+ * Convert Supabase values into reliable numeric coordinates.
+ */
+function normalizeCourse(course: any): Course | null {
+  if (!course) return null;
+
+  const latitude = Number(course.latitude);
+  const longitude = Number(course.longitude);
+
+  if (
+    !course.id ||
+    !course.name ||
+    !Number.isFinite(latitude) ||
+    !Number.isFinite(longitude)
+  ) {
+    return null;
+  }
+
+  if (latitude < -90 || latitude > 90) return null;
+  if (longitude < -180 || longitude > 180) return null;
+
+  return {
+    ...course,
+    latitude,
+    longitude,
+  };
+}
+
+/*
+ * Create the golf flag marker.
+ */
 function makeFlag(course: Course, onClick: () => void) {
   const el = document.createElement("div");
 
-  const flagColor = course.played ? "#8fd19e" : "#e6c875";
+  const isPlayed = Boolean(course.played);
 
-  el.style.width = "34px";
-  el.style.height = "44px";
+  const flagColor = isPlayed ? "#8fd19e" : "#e6c875";
+
+  el.style.width = "42px";
+  el.style.height = "52px";
   el.style.position = "relative";
   el.style.cursor = "pointer";
   el.style.pointerEvents = "auto";
   el.style.transform = "translate(-50%, -100%)";
+  el.style.zIndex = "100";
 
   el.innerHTML = `
+    <!-- Flag pole -->
     <div style="
       position:absolute;
-      left:16px;
-      top:3px;
-      width:2px;
-      height:30px;
+      left:20px;
+      top:2px;
+      width:3px;
+      height:36px;
       background:#f1f4f1;
-      border-radius:2px;
+      border-radius:3px;
+      box-shadow:0 0 4px rgba(255,255,255,.35);
     "></div>
 
+    <!-- Flag -->
     <div style="
       position:absolute;
-      left:18px;
-      top:4px;
-      width:17px;
-      height:12px;
+      left:22px;
+      top:3px;
+      width:19px;
+      height:14px;
       background:${flagColor};
       clip-path:polygon(0 0,100% 25%,0 100%);
-      filter:drop-shadow(0 0 5px ${flagColor});
+      filter:drop-shadow(0 0 6px ${flagColor});
     "></div>
 
+    <!-- Ground marker -->
     <div style="
       position:absolute;
-      left:9px;
-      top:32px;
-      width:16px;
-      height:7px;
+      left:11px;
+      top:37px;
+      width:20px;
+      height:9px;
       border-radius:50%;
       background:${flagColor};
-      box-shadow:0 0 10px ${flagColor};
+      box-shadow:
+        0 0 8px ${flagColor},
+        0 0 16px ${flagColor};
     "></div>
   `;
 
-  el.addEventListener("click", (e) => {
-    e.stopPropagation();
+  el.addEventListener("click", (event) => {
+    event.stopPropagation();
     onClick();
   });
 
@@ -122,38 +139,47 @@ export default function GolfGlobe({
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [countries, setCountries] = useState<any[]>([]);
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [selectedCountry, setSelectedCountry] = useState("");
+
+  const [selectedCourse, setSelectedCourse] =
+    useState<Course | null>(null);
+
+  const [selectedCountry, setSelectedCountry] =
+    useState("");
 
   /*
-   * Use courses passed from the page first.
-   *
-   * If the page doesn't provide courses, load them directly
-   * from Supabase.
+   * Load courses.
    */
   useEffect(() => {
-    const passedCourses = (initialCourses || []) as Course[];
+    const passedCourses = Array.isArray(initialCourses)
+      ? initialCourses
+      : [];
 
-    const validPassedCourses = passedCourses.filter(
-      (course) =>
-        course &&
-        course.id &&
-        course.name &&
-        course.latitude !== null &&
-        course.latitude !== undefined &&
-        course.longitude !== null &&
-        course.longitude !== undefined
-    );
+    const normalizedPassedCourses = passedCourses
+      .map(normalizeCourse)
+      .filter(Boolean) as Course[];
 
-    if (validPassedCourses.length > 0) {
-      setCourses(validPassedCourses);
+    /*
+     * If the page already supplied courses, use them.
+     */
+    if (normalizedPassedCourses.length > 0) {
+      setCourses(normalizedPassedCourses);
+
       console.log(
         "Golf courses loaded from page:",
-        validPassedCourses.length
+        normalizedPassedCourses.length
       );
+
+      console.log(
+        "First course:",
+        normalizedPassedCourses[0]
+      );
+
       return;
     }
 
+    /*
+     * Otherwise load directly from Supabase.
+     */
     async function loadCourses() {
       try {
         const supabaseUrl =
@@ -191,22 +217,20 @@ export default function GolfGlobe({
 
         const data = await response.json();
 
-        const validCourses = (data || []).filter(
-          (course: Course) =>
-            course &&
-            course.id &&
-            course.name &&
-            course.latitude !== null &&
-            course.latitude !== undefined &&
-            course.longitude !== null &&
-            course.longitude !== undefined
-        );
+        const normalizedCourses = (data || [])
+          .map(normalizeCourse)
+          .filter(Boolean) as Course[];
 
-        setCourses(validCourses);
+        setCourses(normalizedCourses);
 
         console.log(
           "Golf courses loaded from Supabase:",
-          validCourses.length
+          normalizedCourses.length
+        );
+
+        console.log(
+          "First course:",
+          normalizedCourses[0]
         );
       } catch (error) {
         console.error(
@@ -230,8 +254,11 @@ export default function GolfGlobe({
       .then((data) => {
         setCountries(data.features || []);
       })
-      .catch((err) => {
-        console.error("Country map error:", err);
+      .catch((error) => {
+        console.error(
+          "Country map error:",
+          error
+        );
       });
   }, []);
 
@@ -241,7 +268,8 @@ export default function GolfGlobe({
   useEffect(() => {
     if (!globeRef.current) return;
 
-    const controls = globeRef.current.controls();
+    const controls =
+      globeRef.current.controls();
 
     controls.enableZoom = true;
     controls.enablePan = false;
@@ -264,6 +292,7 @@ export default function GolfGlobe({
         width: "100%",
         display: "flex",
         justifyContent: "center",
+        paddingBottom: "65px",
       }}
     >
       <Globe
@@ -281,20 +310,25 @@ export default function GolfGlobe({
         atmosphereAltitude={0.12}
 
         showGraticules={false}
+
         animateIn={true}
         waitForGlobeReady={true}
 
         /*
-         * Countries
+         * COUNTRY BORDERS
          */
         polygonsData={countries}
+
         polygonAltitude={0.006}
+
         polygonCapColor={() =>
           "rgba(31,62,38,0.42)"
         }
+
         polygonSideColor={() =>
           "rgba(72,115,79,0.18)"
         }
+
         polygonStrokeColor={() =>
           "rgba(177,205,181,0.55)"
         }
@@ -310,7 +344,10 @@ export default function GolfGlobe({
             font-size:12px;
           ">
             <strong>
-              ${polygon?.properties?.ADMIN || "Country"}
+              ${
+                polygon?.properties?.ADMIN ||
+                "Country"
+              }
             </strong>
           </div>
         `}
@@ -326,12 +363,25 @@ export default function GolfGlobe({
         polygonsTransitionDuration={250}
 
         /*
-         * Golf course flags
+         * GOLF COURSE FLAGS
+         *
+         * Coordinates have already been converted
+         * to actual numbers above.
          */
         htmlElementsData={courses}
-        htmlLat="latitude"
-        htmlLng="longitude"
-        htmlAltitude={0.035}
+
+        htmlLat={(course: Course) =>
+          Number(course.latitude)
+        }
+
+        htmlLng={(course: Course) =>
+          Number(course.longitude)
+        }
+
+        /*
+         * Lift flags slightly above the globe.
+         */
+        htmlAltitude={0.06}
 
         htmlElement={(course: Course) =>
           makeFlag(course, () => {
@@ -344,11 +394,13 @@ export default function GolfGlobe({
       />
 
       {/*
-       * Country popup
+       * COUNTRY POPUP
        */}
       {selectedCountry && !selectedCourse && (
         <button
-          onClick={() => setSelectedCountry("")}
+          onClick={() =>
+            setSelectedCountry("")
+          }
           style={{
             position: "absolute",
             left: "50%",
@@ -397,7 +449,7 @@ export default function GolfGlobe({
       )}
 
       {/*
-       * Course popup
+       * COURSE POPUP
        */}
       {selectedCourse && (
         <div
@@ -453,8 +505,10 @@ export default function GolfGlobe({
               .join(", ")}
           </div>
 
-          {selectedCourse.rating !== null &&
-            selectedCourse.rating !== undefined && (
+          {selectedCourse.rating !==
+            null &&
+            selectedCourse.rating !==
+              undefined && (
               <div
                 style={{
                   fontSize: "12px",
@@ -506,7 +560,8 @@ export default function GolfGlobe({
                 boxSizing: "border-box",
                 padding: "10px",
                 borderRadius: "10px",
-                background: "rgba(143,209,158,.12)",
+                background:
+                  "rgba(143,209,158,.12)",
                 border:
                   "1px solid rgba(143,209,158,.25)",
                 color: "#8fd19e",
@@ -522,7 +577,9 @@ export default function GolfGlobe({
           )}
 
           <button
-            onClick={() => setSelectedCourse(null)}
+            onClick={() =>
+              setSelectedCourse(null)
+            }
             style={{
               width: "100%",
               padding: "10px",
@@ -538,15 +595,23 @@ export default function GolfGlobe({
         </div>
       )}
 
+      {/*
+       * DRAG INSTRUCTION
+       *
+       * Moved lower so it doesn't collide
+       * with the legend from the page.
+       */}
       <div
         style={{
           position: "absolute",
-          bottom: "-28px",
+          bottom: "4px",
           left: "50%",
           transform: "translateX(-50%)",
           color: "#8c968f",
           fontSize: "13px",
           whiteSpace: "nowrap",
+          zIndex: 5,
+          pointerEvents: "none",
         }}
       >
         ↔ Drag to explore
