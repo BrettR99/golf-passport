@@ -8,6 +8,8 @@ const Globe = dynamic(() => import("react-globe.gl"), {
   ssr: false,
 });
 
+const GlobeComponent: any = Globe;
+
 type Course = {
   name: string;
   location: string;
@@ -26,10 +28,10 @@ type GolfGlobeProps = {
 function createGolfFlag(course: Course) {
   const group = new THREE.Group();
 
-  const flagColor = course.played ? "#8fd19e" : "#e6c875";
+  const flagColor = course.played ? 0x8fd19e : 0xe6c875;
 
   const poleMaterial = new THREE.MeshBasicMaterial({
-    color: "#d9dedb",
+    color: 0xd9dedb,
   });
 
   const flagMaterial = new THREE.MeshBasicMaterial({
@@ -43,7 +45,6 @@ function createGolfFlag(course: Course) {
   );
 
   pole.position.y = 0.32;
-
   group.add(pole);
 
   const flagShape = new THREE.Shape();
@@ -58,7 +59,6 @@ function createGolfFlag(course: Course) {
   const flag = new THREE.Mesh(flagGeometry, flagMaterial);
 
   flag.position.x = 0.02;
-
   group.add(flag);
 
   const base = new THREE.Mesh(
@@ -67,8 +67,6 @@ function createGolfFlag(course: Course) {
       color: flagColor,
     })
   );
-
-  base.position.y = 0;
 
   group.add(base);
 
@@ -89,7 +87,7 @@ export default function GolfGlobe({
     )
       .then((response) => response.json())
       .then((data) => {
-        setCountries(data.features);
+        setCountries(data.features || []);
       })
       .catch(() => {
         setCountries([]);
@@ -117,13 +115,13 @@ export default function GolfGlobe({
 
   return (
     <div className="golf-globe">
-      <Globe
+      <GlobeComponent
         ref={globeRef}
         width={390}
         height={390}
         backgroundColor="rgba(0,0,0,0)"
-        globeImageUrl="//cdn.jsdelivr.net/npm/three-globe/example/img/earth-dark.jpg"
-        bumpImageUrl="//cdn.jsdelivr.net/npm/three-globe/example/img/earth-topology.png"
+        globeImageUrl="https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-dark.jpg"
+        bumpImageUrl="https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-topology.png"
         showAtmosphere={true}
         atmosphereColor="#7fb58c"
         atmosphereAltitude={0.12}
@@ -135,7 +133,7 @@ export default function GolfGlobe({
         polygonCapColor={() => "rgba(31, 62, 38, 0.42)"}
         polygonSideColor={() => "rgba(72, 115, 79, 0.18)"}
         polygonStrokeColor={() => "rgba(177, 205, 181, 0.55)"}
-        polygonLabel={({ properties }: any) => `
+        polygonLabel={(polygon: any) => `
           <div style="
             background: rgba(7, 13, 9, 0.94);
             color: white;
@@ -145,20 +143,25 @@ export default function GolfGlobe({
             font-family: Arial, sans-serif;
             font-size: 12px;
           ">
-            <strong>${properties?.ADMIN ?? "Country"}</strong>
+            <strong>${polygon?.properties?.ADMIN ?? "Country"}</strong>
           </div>
         `}
         onPolygonClick={(polygon: any) => {
           setSelectedCountry(polygon?.properties?.ADMIN ?? "");
         }}
         polygonsTransitionDuration={250}
-        pointsData={courses}
+        pointsData={[]}
         pointLat="lat"
         pointLng="lng"
         pointAltitude={0.025}
-        pointThreeObject={(course: Course) => createGolfFlag(course)}
-        pointThreeObjectExtend={false}
-        pointLabel={(course: Course) => `
+        objectsData={courses}
+        objectLat="lat"
+        objectLng="lng"
+        objectAltitude={0.025}
+        objectThreeObject={(course: Course) =>
+          createGolfFlag(course)
+        }
+        objectLabel={(course: Course) => `
           <div style="
             background: rgba(5, 10, 7, 0.95);
             color: white;
@@ -175,8 +178,8 @@ export default function GolfGlobe({
             </span>
           </div>
         `}
-        onPointClick={(point: any) => {
-          onCourseSelect?.(point as Course);
+        onObjectClick={(course: Course) => {
+          onCourseSelect?.(course);
         }}
       />
 
