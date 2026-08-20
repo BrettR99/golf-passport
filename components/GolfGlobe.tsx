@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import * as THREE from "three";
 
 const Globe = dynamic(() => import("react-globe.gl"), {
   ssr: false,
@@ -25,52 +24,62 @@ type GolfGlobeProps = {
   onCourseSelect?: (course: Course) => void;
 };
 
-function createGolfFlag(course: Course) {
-  const group = new THREE.Group();
+function createFlagElement(
+  course: Course,
+  onClick: () => void
+): HTMLDivElement {
+  const wrapper = document.createElement("div");
 
-  const flagColor = course.played ? 0x8fd19e : 0xe6c875;
+  wrapper.style.width = "34px";
+  wrapper.style.height = "42px";
+  wrapper.style.position = "relative";
+  wrapper.style.cursor = "pointer";
+  wrapper.style.pointerEvents = "auto";
+  wrapper.style.transform = "translate(-50%, -100%)";
 
-  const poleMaterial = new THREE.MeshBasicMaterial({
-    color: 0xd9dedb,
+  const color = course.played ? "#8fd19e" : "#e6c875";
+
+  wrapper.innerHTML = `
+    <div style="
+      position:absolute;
+      left:16px;
+      top:4px;
+      width:2px;
+      height:28px;
+      background:#e8eee9;
+      border-radius:2px;
+      box-shadow:0 0 4px rgba(255,255,255,.5);
+    "></div>
+
+    <div style="
+      position:absolute;
+      left:18px;
+      top:5px;
+      width:16px;
+      height:11px;
+      background:${color};
+      clip-path:polygon(0 0, 100% 25%, 0 100%);
+      filter:drop-shadow(0 0 4px ${color});
+    "></div>
+
+    <div style="
+      position:absolute;
+      left:10px;
+      top:31px;
+      width:14px;
+      height:6px;
+      border-radius:50%;
+      background:${color};
+      box-shadow:0 0 8px ${color};
+    "></div>
+  `;
+
+  wrapper.addEventListener("click", (event) => {
+    event.stopPropagation();
+    onClick();
   });
 
-  const flagMaterial = new THREE.MeshBasicMaterial({
-    color: flagColor,
-    side: THREE.DoubleSide,
-  });
-
-  const pole = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.025, 0.025, 0.65, 8),
-    poleMaterial
-  );
-
-  pole.position.y = 0.32;
-  group.add(pole);
-
-  const flagShape = new THREE.Shape();
-
-  flagShape.moveTo(0, 0.58);
-  flagShape.lineTo(0.42, 0.48);
-  flagShape.lineTo(0, 0.34);
-  flagShape.lineTo(0, 0.58);
-
-  const flagGeometry = new THREE.ShapeGeometry(flagShape);
-
-  const flag = new THREE.Mesh(flagGeometry, flagMaterial);
-
-  flag.position.x = 0.02;
-  group.add(flag);
-
-  const base = new THREE.Mesh(
-    new THREE.SphereGeometry(0.07, 10, 10),
-    new THREE.MeshBasicMaterial({
-      color: flagColor,
-    })
-  );
-
-  group.add(base);
-
-  return group;
+  return wrapper;
 }
 
 export default function GolfGlobe({
@@ -135,13 +144,13 @@ export default function GolfGlobe({
         polygonStrokeColor={() => "rgba(177, 205, 181, 0.55)"}
         polygonLabel={(polygon: any) => `
           <div style="
-            background: rgba(7, 13, 9, 0.94);
-            color: white;
-            padding: 7px 10px;
-            border-radius: 8px;
-            border: 1px solid rgba(150, 190, 158, 0.35);
-            font-family: Arial, sans-serif;
-            font-size: 12px;
+            background:rgba(7,13,9,.94);
+            color:white;
+            padding:7px 10px;
+            border-radius:8px;
+            border:1px solid rgba(150,190,158,.35);
+            font-family:Arial,sans-serif;
+            font-size:12px;
           ">
             <strong>${polygon?.properties?.ADMIN ?? "Country"}</strong>
           </div>
@@ -150,37 +159,16 @@ export default function GolfGlobe({
           setSelectedCountry(polygon?.properties?.ADMIN ?? "");
         }}
         polygonsTransitionDuration={250}
-        pointsData={[]}
-        pointLat="lat"
-        pointLng="lng"
-        pointAltitude={0.025}
-        objectsData={courses}
-        objectLat="lat"
-        objectLng="lng"
-        objectAltitude={0.025}
-        objectThreeObject={(course: Course) =>
-          createGolfFlag(course)
+        htmlElementsData={courses}
+        htmlLat="lat"
+        htmlLng="lng"
+        htmlAltitude={0.035}
+        htmlElement={(course: Course) =>
+          createFlagElement(course, () => {
+            onCourseSelect?.(course);
+          })
         }
-        objectLabel={(course: Course) => `
-          <div style="
-            background: rgba(5, 10, 7, 0.95);
-            color: white;
-            padding: 8px 10px;
-            border-radius: 9px;
-            border: 1px solid rgba(150, 190, 158, 0.35);
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-          ">
-            <strong>${course.name}</strong><br/>
-            <span style="opacity:.65">${course.location}</span><br/>
-            <span style="color:${course.played ? "#9ed5a7" : "#e6c875"}">
-              ${course.played ? `Played · ${course.score}` : "Wishlist"}
-            </span>
-          </div>
-        `}
-        onObjectClick={(course: Course) => {
-          onCourseSelect?.(course);
-        }}
+        htmlTransitionDuration={0}
       />
 
       {selectedCountry && (
