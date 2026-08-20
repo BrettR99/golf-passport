@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { supabase } from "@/lib/supabase";
 
 const Globe = dynamic(() => import("react-globe.gl"), {
   ssr: false,
@@ -10,18 +11,21 @@ const Globe = dynamic(() => import("react-globe.gl"), {
 const GlobeComponent: any = Globe;
 
 type Course = {
+  id: string;
   name: string;
-  location: string;
-  lat: number;
-  lng: number;
-  rating: number;
-  played: boolean;
+  country: string | null;
+  country_code: string | null;
+  region: string | null;
+  city: string | null;
+  latitude: number;
+  longitude: number;
+  website?: string | null;
+  holes?: number | null;
+  par?: number | null;
+  rating?: number | null;
+  description?: string | null;
+  played?: boolean;
   score?: number;
-};
-
-type GolfGlobeProps = {
-  courses: Course[];
-  onCourseSelect?: (course: Course) => void;
 };
 
 function createFlagElement(
@@ -82,13 +86,35 @@ function createFlagElement(
   return wrapper;
 }
 
-export default function GolfGlobe({
-  courses,
-  onCourseSelect,
-}: GolfGlobeProps) {
+export default function GolfGlobe() {
   const globeRef = useRef<any>(null);
+
+  const [courses, setCourses] = useState<Course[]>([]);
   const [countries, setCountries] = useState<any[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [selectedCountry, setSelectedCountry] = useState("");
+
+  useEffect(() => {
+    async function loadCourses() {
+      const { data, error } = await supabase
+        .from("courses")
+        .select("*")
+        .not("latitude", "is", null)
+        .not("longitude", "is", null)
+        .limit(5000);
+
+      if (error) {
+        console.error("Course database error:", error);
+        return;
+      }
+
+      if (data) {
+        setCourses(data as Course[]);
+      }
+    }
+
+    loadCourses();
+  }, []);
 
   useEffect(() => {
     fetch(
@@ -98,8 +124,8 @@ export default function GolfGlobe({
       .then((data) => {
         setCountries(data.features || []);
       })
-      .catch(() => {
-        setCountries([]);
+      .catch((error) => {
+        console.error("Country data error:", error);
       });
   }, []);
 
@@ -123,7 +149,15 @@ export default function GolfGlobe({
   }, []);
 
   return (
-    <div className="golf-globe">
+    <div
+      className="golf-globe"
+      style={{
+        position: "relative",
+        width: "100%",
+        display: "flex",
+        justifyContent: "center",
+      }}
+    >
       <GlobeComponent
         ref={globeRef}
         width={390}
@@ -160,18 +194,18 @@ export default function GolfGlobe({
         }}
         polygonsTransitionDuration={250}
         htmlElementsData={courses}
-        htmlLat="lat"
-        htmlLng="lng"
+        htmlLat="latitude"
+        htmlLng="longitude"
         htmlAltitude={0.035}
         htmlElement={(course: Course) =>
           createFlagElement(course, () => {
-            onCourseSelect?.(course);
+            setSelectedCourse(course);
           })
         }
         htmlTransitionDuration={0}
       />
 
-      {selectedCountry && (
+      {selectedCountry && !selectedCourse && (
         <button
           className="selected-country"
           onClick={() => setSelectedCountry("")}
@@ -180,6 +214,73 @@ export default function GolfGlobe({
           <strong>{selectedCountry}</strong>
           <small>Tap to dismiss</small>
         </button>
+      )}
+
+      {selectedCourse && (
+        <div
+          style={{
+            position: "absolute",
+            left: "50%",
+            bottom: "20px",
+            transform: "translateX(-50%)",
+            width: "250px",
+            padding: "16px",
+            borderRadius: "16px",
+            background: "rgba(7,13,9,.94)",
+            border: "1px solid rgba(150,190,158,.35)",
+            color: "white",
+            zIndex: 10,
+            backdropFilter: "blur(12px)",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "10px",
+              letterSpacing: "3px",
+              color: "#8fd19e",
+              marginBottom: "5px",
+            }}
+          >
+            GOLF COURSE
+          </div>
+
+          <div
+            style={{
+              fontSize: "18px",
+              fontWeight: 700,
+              marginBottom: "4px",
+            }}
+          >
+            {selectedCourse.name}
+          </div>
+
+          <div
+            style={{
+              fontSize: "13px",
+              color: "#9ca69f",
+              marginBottom: "12px",
+            }}
+          >
+            {[selectedCourse.city, selectedCourse.region, selectedCourse.country]
+              .filter(Boolean)
+              .join(", ")}
+          </div>
+
+          <button
+            onClick={() => setSelectedCourse(null)}
+            style={{
+              width: "100%",
+              padding: "10px",
+              borderRadius: "10px",
+              border: "none",
+              background: "#dfe9df",
+              color: "#101711",
+              fontWeight: 700,
+            }}
+          >
+            Close
+          </button>
+        </div>
       )}
 
       <div className="globe-hint">
