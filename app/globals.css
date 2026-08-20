@@ -9,9 +9,7 @@ body {
   min-height: 100%;
   background: #050806;
   color: #f4f7f3;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
-    "Helvetica Neue", Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
 }
 
 body {
@@ -30,20 +28,14 @@ button {
   min-height: 100vh;
   margin: 0 auto;
   padding: 24px 18px 120px;
-  background:
-    radial-gradient(
-      circle at 50% 35%,
-      rgba(40, 100, 67, 0.12),
-      transparent 35%
-    ),
-    #050806;
+  background: #050806;
 }
 
 .top-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 2px 0;
+  padding-top: 8px;
 }
 
 .brand {
@@ -57,7 +49,6 @@ button {
   margin-top: 5px;
   font-size: 25px;
   font-weight: 700;
-  letter-spacing: -0.8px;
 }
 
 .profile-button {
@@ -95,7 +86,7 @@ button {
   font-size: 11px;
 }
 
-/* REAL GLOBE */
+/* GLOBE */
 
 .globe-section {
   position: relative;
@@ -110,8 +101,8 @@ button {
   width: min(92vw, 390px);
   height: min(92vw, 390px);
   margin: 0 auto;
-  border-radius: 50%;
   overflow: hidden;
+  border-radius: 50%;
 }
 
 .golf-globe canvas {
@@ -151,7 +142,6 @@ button {
   background: rgba(5, 10, 7, 0.92);
   color: #f4f7f3;
   border: 1px solid rgba(150, 190, 158, 0.35);
-  backdrop-filter: blur(12px);
 }
 
 .selected-country span {
@@ -203,8 +193,7 @@ button {
   padding: 18px;
   border: 1px solid #253229;
   border-radius: 22px;
-  background: rgba(15, 24, 18, 0.92);
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+  background: #0f1812;
 }
 
 .course-card-top {
@@ -328,7 +317,6 @@ button {
 
 .add-course span {
   font-size: 18px;
-  line-height: 10px;
 }
 
 /* BOTTOM NAV */
@@ -346,9 +334,8 @@ button {
   padding: 7px;
   border: 1px solid #263129;
   border-radius: 23px;
-  background: rgba(13, 20, 15, 0.94);
+  background: rgba(13, 20, 15, 0.95);
   backdrop-filter: blur(20px);
-  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.45);
 }
 
 .bottom-nav button {
