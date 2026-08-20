@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import GolfGlobe from "@/components/GolfGlobe";
+import GolfGlobe from "../components/GolfGlobe";
 
 const courses = [
   {
