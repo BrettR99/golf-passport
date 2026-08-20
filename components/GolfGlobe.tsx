@@ -73,7 +73,7 @@ function makeFlag(course: Course, onClick: () => void) {
   return el;
 }
 
-export default function GolfGlobe() {
+export default function GolfGlobe(_props: { courses?: Course[] }) {
   const globeRef = useRef<any>(null);
 
   const [courses, setCourses] = useState<Course[]>([]);
