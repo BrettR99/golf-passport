@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import * as THREE from "three";
 
 const Globe = dynamic(() => import("react-globe.gl"), {
   ssr: false,
@@ -21,6 +22,58 @@ type GolfGlobeProps = {
   courses: Course[];
   onCourseSelect?: (course: Course) => void;
 };
+
+function createGolfFlag(course: Course) {
+  const group = new THREE.Group();
+
+  const flagColor = course.played ? "#8fd19e" : "#e6c875";
+
+  const poleMaterial = new THREE.MeshBasicMaterial({
+    color: "#d9dedb",
+  });
+
+  const flagMaterial = new THREE.MeshBasicMaterial({
+    color: flagColor,
+    side: THREE.DoubleSide,
+  });
+
+  const pole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.025, 0.025, 0.65, 8),
+    poleMaterial
+  );
+
+  pole.position.y = 0.32;
+
+  group.add(pole);
+
+  const flagShape = new THREE.Shape();
+
+  flagShape.moveTo(0, 0.58);
+  flagShape.lineTo(0.42, 0.48);
+  flagShape.lineTo(0, 0.34);
+  flagShape.lineTo(0, 0.58);
+
+  const flagGeometry = new THREE.ShapeGeometry(flagShape);
+
+  const flag = new THREE.Mesh(flagGeometry, flagMaterial);
+
+  flag.position.x = 0.02;
+
+  group.add(flag);
+
+  const base = new THREE.Mesh(
+    new THREE.SphereGeometry(0.07, 10, 10),
+    new THREE.MeshBasicMaterial({
+      color: flagColor,
+    })
+  );
+
+  base.position.y = 0;
+
+  group.add(base);
+
+  return group;
+}
 
 export default function GolfGlobe({
   courses,
@@ -102,12 +155,9 @@ export default function GolfGlobe({
         pointsData={courses}
         pointLat="lat"
         pointLng="lng"
-        pointAltitude={0.018}
-        pointRadius={0.42}
-        pointResolution={10}
-        pointColor={(course: Course) =>
-          course.played ? "#9ed5a7" : "#e6c875"
-        }
+        pointAltitude={0.025}
+        pointThreeObject={(course: Course) => createGolfFlag(course)}
+        pointThreeObjectExtend={false}
         pointLabel={(course: Course) => `
           <div style="
             background: rgba(5, 10, 7, 0.95);
