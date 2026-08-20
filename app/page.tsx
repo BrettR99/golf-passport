@@ -7,10 +7,8 @@ export type Course = {
   id: string;
   name: string;
   location: string;
-
   lat: number;
   lng: number;
-
   score?: number;
   rating: number;
   played: boolean;
@@ -76,7 +74,7 @@ export default function Home() {
   return (
     <main className="app-shell">
 
-      {/* TOP HEADER */}
+      {/* HEADER */}
       <div className="top-bar">
         <div>
           <div className="brand">
@@ -126,23 +124,30 @@ export default function Home() {
           onCourseSelect={setSelectedCourse}
         />
 
-        {/* ONLY LEGEND ON THE PAGE */}
-        <div className="map-label">
-
-          <span className="legend-dot played-dot" />
+        {/* ONE LEGEND ONLY */}
+        <div
+          className="map-label"
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <span
+            className="legend-dot played-dot"
+          />
 
           Played
 
-          <span className="legend-dot wishlist-dot" />
+          <span
+            className="legend-dot wishlist-dot"
+          />
 
           Wishlist
-
         </div>
 
       </section>
 
 
-      {/* COURSE CARD */}
+      {/* SELECTED COURSE */}
       <section className="course-card">
 
         <div className="course-card-top">
@@ -164,7 +169,6 @@ export default function Home() {
             </p>
 
           </div>
-
 
           <div className="course-rating">
 
@@ -220,6 +224,137 @@ export default function Home() {
           <span>→</span>
 
         </button>
+
+      </section>
+
+
+      {/* COURSE LIST */}
+      <section
+        style={{
+          marginTop: "18px",
+          padding: "0 38px 130px",
+        }}
+      >
+
+        <div
+          style={{
+            color: "#8fd19e",
+            fontSize: "10px",
+            letterSpacing: "3px",
+            fontWeight: 700,
+            marginBottom: "12px",
+          }}
+        >
+          YOUR COURSES
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+          }}
+        >
+
+          {courses.map((course) => (
+
+            <button
+              key={course.id}
+              onClick={() =>
+                setSelectedCourse(course)
+              }
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "13px 14px",
+                borderRadius: "14px",
+                border:
+                  selectedCourse.id === course.id
+                    ? "1px solid rgba(143,209,158,.45)"
+                    : "1px solid rgba(143,209,158,.12)",
+                background:
+                  selectedCourse.id === course.id
+                    ? "rgba(31,62,38,.45)"
+                    : "rgba(7,13,9,.55)",
+                color: "white",
+                textAlign: "left",
+              }}
+            >
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  minWidth: 0,
+                }}
+              >
+
+                <span
+                  style={{
+                    width: "9px",
+                    height: "9px",
+                    minWidth: "9px",
+                    borderRadius: "50%",
+                    background: course.played
+                      ? "#8fd19e"
+                      : "#e6c875",
+                    boxShadow:
+                      course.played
+                        ? "0 0 8px rgba(143,209,158,.65)"
+                        : "0 0 8px rgba(230,200,117,.65)",
+                  }}
+                />
+
+                <div
+                  style={{
+                    minWidth: 0,
+                  }}
+                >
+
+                  <div
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: 700,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {course.name}
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: "11px",
+                      color: "#8c968f",
+                      marginTop: "2px",
+                    }}
+                  >
+                    {course.location}
+                  </div>
+
+                </div>
+
+              </div>
+
+              <div
+                style={{
+                  color: "#e6c875",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                }}
+              >
+                ★ {course.rating}
+              </div>
+
+            </button>
+
+          ))}
+
+        </div>
 
       </section>
 
