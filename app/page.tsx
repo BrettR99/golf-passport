@@ -3,11 +3,14 @@
 import { useState } from "react";
 import GolfGlobe from "../components/GolfGlobe";
 
-type Course = {
+export type Course = {
+  id: string;
   name: string;
   location: string;
+
   lat: number;
   lng: number;
+
   score?: number;
   rating: number;
   played: boolean;
@@ -15,6 +18,7 @@ type Course = {
 
 const courses: Course[] = [
   {
+    id: "sandpiper-resort",
     name: "Sandpiper Resort",
     location: "Harrison Mills, BC",
     lat: 49.3,
@@ -24,6 +28,7 @@ const courses: Course[] = [
     played: true,
   },
   {
+    id: "whistler-golf-club",
     name: "Whistler Golf Club",
     location: "Whistler, BC",
     lat: 50.12,
@@ -33,6 +38,7 @@ const courses: Course[] = [
     played: true,
   },
   {
+    id: "pebble-beach",
     name: "Pebble Beach",
     location: "California, USA",
     lat: 36.57,
@@ -41,6 +47,7 @@ const courses: Course[] = [
     played: false,
   },
   {
+    id: "st-andrews",
     name: "St Andrews",
     location: "Scotland, UK",
     lat: 56.34,
@@ -49,6 +56,7 @@ const courses: Course[] = [
     played: false,
   },
   {
+    id: "royal-melbourne",
     name: "Royal Melbourne",
     location: "Melbourne, Australia",
     lat: -37.83,
@@ -59,23 +67,39 @@ const courses: Course[] = [
 ];
 
 export default function Home() {
-  const [selectedCourse, setSelectedCourse] = useState<Course>(courses[0]);
-  const [activeTab, setActiveTab] = useState("World");
+  const [selectedCourse, setSelectedCourse] =
+    useState<Course>(courses[0]);
+
+  const [activeTab, setActiveTab] =
+    useState("World");
 
   return (
     <main className="app-shell">
+
+      {/* TOP HEADER */}
       <div className="top-bar">
         <div>
-          <div className="brand">GOLF PASSPORT</div>
-          <div className="page-title">Your Golf World</div>
+          <div className="brand">
+            GOLF PASSPORT
+          </div>
+
+          <div className="page-title">
+            Your Golf World
+          </div>
         </div>
 
-        <button className="profile-button" aria-label="Profile">
+        <button
+          className="profile-button"
+          aria-label="Profile"
+        >
           B
         </button>
       </div>
 
+
+      {/* STATS */}
       <div className="stats-row">
+
         <div className="stat">
           <strong>2</strong>
           <span>Courses</span>
@@ -90,86 +114,171 @@ export default function Home() {
           <strong>3</strong>
           <span>Wishlist</span>
         </div>
+
       </div>
 
-      <section className="globe-section">
-       <GolfGlobe />
 
+      {/* GLOBE */}
+      <section className="globe-section">
+
+        <GolfGlobe
+          courses={courses}
+          onCourseSelect={setSelectedCourse}
+        />
+
+        {/* ONLY LEGEND ON THE PAGE */}
         <div className="map-label">
+
           <span className="legend-dot played-dot" />
+
           Played
 
           <span className="legend-dot wishlist-dot" />
+
           Wishlist
+
         </div>
+
       </section>
 
+
+      {/* COURSE CARD */}
       <section className="course-card">
+
         <div className="course-card-top">
+
           <div>
+
             <div className="eyebrow">
-              {selectedCourse.played ? "PLAYED COURSE" : "WISHLIST"}
+              {selectedCourse.played
+                ? "PLAYED COURSE"
+                : "WISHLIST"}
             </div>
 
-            <h2>{selectedCourse.name}</h2>
+            <h2>
+              {selectedCourse.name}
+            </h2>
 
-            <p>{selectedCourse.location}</p>
+            <p>
+              {selectedCourse.location}
+            </p>
+
           </div>
+
 
           <div className="course-rating">
+
             <span>★</span>
+
             {selectedCourse.rating}
+
           </div>
+
         </div>
 
-        {selectedCourse.played && selectedCourse.score !== undefined ? (
+
+        {selectedCourse.played &&
+        selectedCourse.score !== undefined ? (
+
           <div className="score-box">
+
             <span>Your score</span>
-            <strong>{selectedCourse.score}</strong>
+
+            <strong>
+              {selectedCourse.score}
+            </strong>
+
           </div>
+
         ) : (
+
           <div className="wishlist-message">
+
             <span>⭐</span>
 
             <div>
-              <strong>On your bucket list</strong>
-              <small>One day you'll play it.</small>
+
+              <strong>
+                On your bucket list
+              </strong>
+
+              <small>
+                One day you'll play it.
+              </small>
+
             </div>
+
           </div>
+
         )}
+
 
         <button className="course-action">
+
           View Course
+
           <span>→</span>
+
         </button>
+
       </section>
 
+
+      {/* ADD COURSE */}
       <button className="add-course">
+
         <span>＋</span>
+
         Add Course
+
       </button>
 
-      <nav className="bottom-nav">
-        {["World", "Explore", "Wishlist", "Feed", "Profile"].map(
-          (tab) => (
-            <button
-              key={tab}
-              className={activeTab === tab ? "active" : ""}
-              onClick={() => setActiveTab(tab)}
-            >
-              <span className="nav-icon">
-                {tab === "World" && "◉"}
-                {tab === "Explore" && "⌕"}
-                {tab === "Wishlist" && "☆"}
-                {tab === "Feed" && "◌"}
-                {tab === "Profile" && "○"}
-              </span>
 
-              <span>{tab}</span>
-            </button>
-          )
-        )}
+      {/* BOTTOM NAV */}
+      <nav className="bottom-nav">
+
+        {[
+          "World",
+          "Explore",
+          "Wishlist",
+          "Feed",
+          "Profile",
+        ].map((tab) => (
+
+          <button
+            key={tab}
+            className={
+              activeTab === tab
+                ? "active"
+                : ""
+            }
+            onClick={() =>
+              setActiveTab(tab)
+            }
+          >
+
+            <span className="nav-icon">
+
+              {tab === "World" && "◉"}
+
+              {tab === "Explore" && "⌕"}
+
+              {tab === "Wishlist" && "☆"}
+
+              {tab === "Feed" && "◌"}
+
+              {tab === "Profile" && "○"}
+
+            </span>
+
+            <span>{tab}</span>
+
+          </button>
+
+        ))}
+
       </nav>
+
     </main>
   );
 }
