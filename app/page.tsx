@@ -3,7 +3,17 @@
 import { useState } from "react";
 import GolfGlobe from "../components/GolfGlobe";
 
-const courses = [
+type Course = {
+  name: string;
+  location: string;
+  lat: number;
+  lng: number;
+  score?: number;
+  rating: number;
+  played: boolean;
+};
+
+const courses: Course[] = [
   {
     name: "Sandpiper Resort",
     location: "Harrison Mills, BC",
@@ -49,7 +59,7 @@ const courses = [
 ];
 
 export default function Home() {
-  const [selectedCourse, setSelectedCourse] = useState(courses[0]);
+  const [selectedCourse, setSelectedCourse] = useState<Course>(courses[0]);
   const [activeTab, setActiveTab] = useState("World");
 
   return (
@@ -60,7 +70,9 @@ export default function Home() {
           <div className="page-title">Your Golf World</div>
         </div>
 
-        <button className="profile-button">B</button>
+        <button className="profile-button" aria-label="Profile">
+          B
+        </button>
       </div>
 
       <div className="stats-row">
@@ -83,12 +95,13 @@ export default function Home() {
       <section className="globe-section">
         <GolfGlobe
           courses={courses}
-          onCourseSelect={setSelectedCourse}
+          onCourseSelect={(course) => setSelectedCourse(course)}
         />
 
         <div className="map-label">
           <span className="legend-dot played-dot" />
           Played
+
           <span className="legend-dot wishlist-dot" />
           Wishlist
         </div>
@@ -102,6 +115,7 @@ export default function Home() {
             </div>
 
             <h2>{selectedCourse.name}</h2>
+
             <p>{selectedCourse.location}</p>
           </div>
 
@@ -111,7 +125,7 @@ export default function Home() {
           </div>
         </div>
 
-        {selectedCourse.played && selectedCourse.score ? (
+        {selectedCourse.played && selectedCourse.score !== undefined ? (
           <div className="score-box">
             <span>Your score</span>
             <strong>{selectedCourse.score}</strong>
